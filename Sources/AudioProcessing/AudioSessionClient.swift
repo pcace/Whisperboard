@@ -70,8 +70,8 @@ extension AudioSessionClient: DependencyKey {
     var options: AVAudioSession.CategoryOptions {
       let shouldMixWithOthers = settings.shouldMixWithOtherAudio
       let options: AVAudioSession.CategoryOptions = shouldMixWithOthers
-        ? [.allowBluetooth, .mixWithOthers, .defaultToSpeaker]
-        : [.allowBluetooth, .defaultToSpeaker]
+        ? [.allowBluetoothHFP, .mixWithOthers, .defaultToSpeaker]
+        : [.allowBluetoothHFP, .defaultToSpeaker]
       return options
     }
 
@@ -101,7 +101,7 @@ extension AudioSessionClient: DependencyKey {
           let mic = getSelectedMicrophone()
           if mic?.isBuiltIn ?? false {
             var modifiedOptions = options
-            modifiedOptions.remove(.allowBluetooth)
+            modifiedOptions.remove(.allowBluetoothHFP)
             modifiedOptions.insert(.allowBluetoothA2DP)
             try session.setCategory(category, mode: mode, options: modifiedOptions)
           }

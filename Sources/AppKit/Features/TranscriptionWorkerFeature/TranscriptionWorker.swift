@@ -57,16 +57,22 @@ struct TranscriptionWorker: Reducer {
 
         if let (task, recording) = getNextTask(state: state) {
           return .run { send in
-            await send(.setCurrentTask(task))
-            await send(.beginBackgroundTask)
-            await send(.scheduleBackgroundProcessingTask)
-            await process(task: task, recording: recording) { transcription in
-              await send(.transcriptionDidUpdate(transcription, task: task))
+            await MainActor.run {
+              send(.setCurrentTask(task))
+              send(.beginBackgroundTask)
+              send(.scheduleBackgroundProcessingTask)
             }
-            await send(.endBackgroundTask)
-            await send(.cancelScheduledBackgroundProcessingTask)
-            // TODO: Make sure it is handled properly in case of canceling
-            await send(.currentTaskFinishProcessing)
+            await process(task: task, recording: recording) { transcription in
+              await MainActor.run {
+                send(.transcriptionDidUpdate(transcription, task: task))
+              }
+            }
+            await MainActor.run {
+              send(.endBackgroundTask)
+              send(.cancelScheduledBackgroundProcessingTask)
+              // TODO: Make sure it is handled properly in case of canceling
+              send(.currentTaskFinishProcessing)
+            }
           }.cancellable(id: CancelID.processing, cancelInFlight: true)
         } else {
           return .none
@@ -74,17 +80,23 @@ struct TranscriptionWorker: Reducer {
 
       case let .handleBGProcessingTask(bgTask):
         return .run { send in
-          bgTask.expirationHandler = {}
-          await send(.processTasks)
+          await MainActor.run {
+            bgTask.expirationHandler = {}
+            send(.processTasks)
+          }
         }
 
       case .beginBackgroundTask:
         guard state.isProcessing else { return .none }
         return .run { send in
-          let taskIdentifier = await UIApplication.shared.beginBackgroundTask {
-            Task { await send(.endBackgroundTask) }
+          let taskIdentifier = await MainActor.run {
+            UIApplication.shared.beginBackgroundTask {
+              Task { send(.endBackgroundTask) }
+            }
           }
-          await send(.setBackgroundTask(taskIdentifier))
+          await MainActor.run {
+            send(.setBackgroundTask(taskIdentifier))
+          }
         }
 
       case .endBackgroundTask:
@@ -149,7 +161,9 @@ struct TranscriptionWorker: Reducer {
         }
         state.currentTask = nil
         return .run { send in
-          await send(.processTasks) // Send processTasks action again after finishing the current task
+          await MainActor.run {
+            send(.processTasks) // Send processTasks action again after finishing the current task
+          }
         }
 
       case let .transcriptionDidUpdate(transcription, task: task):

@@ -1,7 +1,7 @@
 import AVFoundation
 import Dependencies
 import Foundation
-import WhisperKit
+@preconcurrency import WhisperKit
 
 extension AudioProcessor {
   func startFileRecording(rawBufferCallback: ((AVAudioPCMBuffer, [Float]) -> Void)? = nil) throws -> AVAudioConverter {

@@ -67,17 +67,7 @@ struct LiveTranscriptionModelSelectorView: View {
   var body: some View {
     WithPerceptionTracking {
       ZStack {
-        if store.state.premiumFeatures.liveTranscriptionIsPurchased == nil {
-          ProgressView()
-        } else if store.state.premiumFeatures.liveTranscriptionIsPurchased == false {
-          LockedFeatureView(
-            title: "Live Transcription",
-            description: "Real-time speech-to-text. Unlock now. Transform recording.",
-            onInfoTap: { store.send(.set(\.showInfoPopup, !store.state.showInfoPopup)) },
-            onUpgradeTap: { store.send(.upgradeButtonTapped) }
-          )
-        } else {
-          VStack(spacing: .grid(1)) {
+        VStack(spacing: .grid(1)) {
             HStack {
               #if APPSTORE
                 LottieView(animation: AnimationAsset.wiredOutline2474SparklesGlitter.animation)
@@ -155,7 +145,6 @@ struct LiveTranscriptionModelSelectorView: View {
             .labelStyle(.titleOnly)
             .padding(.grid(4))
             .cardStyle()
-          }
         }
       }
       .popover(

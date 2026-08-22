@@ -99,8 +99,7 @@ struct RecordingControls {
     let newInfo = RecordingInfo(id: uuid().uuidString, date: date.now)
 
     @Shared(.settings) var settings
-    @Shared(.premiumFeatures) var premiumFeatures
-    let isLiveTranscriptionEnabled = premiumFeatures.liveTranscriptionIsPurchased == true && settings.isLiveTranscriptionEnabled
+    let isLiveTranscriptionEnabled = settings.isLiveTranscriptionEnabled
 
     return Recording.State(recordingInfo: newInfo, isLiveTranscriptionEnabled: isLiveTranscriptionEnabled)
   }

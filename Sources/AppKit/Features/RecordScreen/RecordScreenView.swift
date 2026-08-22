@@ -96,7 +96,7 @@ struct RecordScreenView: View {
       VStack(spacing: .grid(6)) {
         MicSelectorView(store: store.scope(state: \.micSelector, action: \.micSelector))
 
-        if store.state.recordingControls.recording == nil, store.state.liveTranscriptionSelector.premiumFeatures.isProductFound == true {
+        if store.state.recordingControls.recording == nil {
           LiveTranscriptionModelSelectorView(store: store.scope(state: \.liveTranscriptionSelector, action: \.liveTranscriptionSelector))
             .transition(.movingParts.blur.combined(with: .opacity))
         }

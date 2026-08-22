@@ -5,14 +5,14 @@ import ComposableArchitecture
 import CoreML
 import Dependencies
 import Foundation
-import WhisperKit
+@preconcurrency import WhisperKit
 
 // MARK: - TranscriptionStream
 
 public actor TranscriptionStream {
   public static let modelDirURL: URL = .documentsDirectory.appendingPathComponent("huggingface/models/argmaxinc/whisperkit-coreml")
 
-  public struct State {
+  public struct State: Sendable {
     public var currentFallbacks: Int = 0
     public var lastBufferSize: Int = 0
     public var lastConfirmedSegmentEndSeconds: Float = 0
@@ -58,13 +58,14 @@ public actor TranscriptionStream {
   public var state: TranscriptionStream.State = .init() {
     didSet {
       let copyState = state
-      DispatchQueue.main.async { [stateChangeCallback] in
+      let stateChangeCallback = stateChangeCallback
+      DispatchQueue.main.async {
         stateChangeCallback?(copyState)
       }
     }
   }
 
-  public var stateChangeCallback: ((State) -> Void)?
+  public var stateChangeCallback: (@Sendable (State) -> Void)?
 
   private var whisperKit: WhisperKit?
   private let audioProcessor: AudioProcessor
@@ -242,7 +243,7 @@ public actor TranscriptionStream {
     }
   }
 
-  public func startRealtimeLoop(callback: @escaping (State) -> Void) async throws {
+  public func startRealtimeLoop(callback: @escaping @Sendable (State) -> Void) async throws {
     logs.debug("Starting real-time loop")
     options = DecodingOptions(
       verbose: false,
@@ -284,7 +285,7 @@ public actor TranscriptionStream {
     state = .init()
   }
 
-  public func transcribeCurrentBuffer(callback: @escaping (State) -> Void) async throws {
+  public func transcribeCurrentBuffer(callback: @escaping @Sendable (State) -> Void) async throws {
     logs.debug("Starting transcription of current buffer")
     stateChangeCallback = callback
     state.isWorking = true

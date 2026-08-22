@@ -2,7 +2,7 @@ import Common
 import ComposableArchitecture
 import Dependencies
 import Foundation
-import WhisperKit
+@preconcurrency import WhisperKit
 
 // MARK: - RecordingTranscriptionStream
 
