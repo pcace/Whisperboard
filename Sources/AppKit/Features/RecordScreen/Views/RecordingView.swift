@@ -64,6 +64,7 @@ struct Recording {
   }
 
   @Dependency(RecordingTranscriptionStream.self) var transcriptionStream: RecordingTranscriptionStream
+  @Dependency(LiveTranslationClient.self) var liveTranslationClient: LiveTranslationClient
 
   var body: some ReducerOf<Self> {
     BindingReducer()
@@ -87,6 +88,14 @@ struct Recording {
           generateImpact()
 
           @Shared(.settings) var settings: Settings
+
+          if settings.isLiveTranslationEnabled, liveTranslationClient.isSupported() {
+            let outputLanguage = settings.outputLanguage ?? "en"
+            try? await liveTranslationClient.configure(.init(targetLanguage: outputLanguage))
+            await transcriptionStream.configureTranslation(true, outputLanguage) { [liveTranslationClient] text in
+              try await liveTranslationClient.translate(text)
+            }
+          }
 
           let transcription = Transcription(
             fileName: recordingInfo.wrappedValue.fileName,
@@ -119,6 +128,9 @@ struct Recording {
                     recordingInfo.withLock { recordingInfo in
                       recordingInfo.transcription?.segments = transcriptionSegments
                       recordingInfo.transcription?.text = transcriptionSegments.map(\.text).joined(separator: " ")
+                      if !transcriptionState.translatedText.isEmpty {
+                        recordingInfo.transcription?.translatedText = transcriptionState.translatedText
+                      }
                       recordingInfo.transcription?.timings = .init(tokensPerSecond: transcriptionState.tokensPerSecond)
                     }
                   }
@@ -323,12 +335,25 @@ struct RecordingView: View {
   @ViewBuilder
   private func transcribingView(recording: Recording.State) -> some View {
     ScrollView(showsIndicators: false) {
-      Text(recording.recordingInfo.text)
-        .textStyle(.body)
-        .lineLimit(nil)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, .grid(2))
-        .padding(.horizontal, .grid(4))
+      VStack(alignment: .leading, spacing: .grid(2)) {
+        Text(recording.recordingInfo.text)
+          .textStyle(.body)
+          .lineLimit(nil)
+          .frame(maxWidth: .infinity, alignment: .leading)
+
+        if let translatedText = recording.recordingInfo.transcription?.translatedText,
+           !translatedText.isEmpty {
+          Divider()
+          Text(translatedText)
+            .textStyle(.body)
+            .italic()
+            .foregroundColor(.secondary)
+            .lineLimit(nil)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+      }
+      .padding(.vertical, .grid(2))
+      .padding(.horizontal, .grid(4))
     }
   }
 }

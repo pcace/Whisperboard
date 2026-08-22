@@ -12,6 +12,8 @@ public struct Settings: Hashable {
   public var isUsingNeuralEngine: Bool
   public var isVADEnabled: Bool
   public var isLiveTranscriptionEnabled: Bool
+  public var isLiveTranslationEnabled: Bool
+  public var outputLanguage: String?
 
   public var voiceLanguage: String? {
     get { parameters.language }
@@ -27,7 +29,9 @@ public struct Settings: Hashable {
     isUsingGPU: Bool = false,
     isUsingNeuralEngine: Bool = true,
     isVADEnabled: Bool = false,
-    isLiveTranscriptionEnabled: Bool = false
+    isLiveTranscriptionEnabled: Bool = false,
+    isLiveTranslationEnabled: Bool = false,
+    outputLanguage: String? = nil
   ) {
     self.useMockedClients = useMockedClients
     self.selectedModelName = selectedModelName
@@ -38,6 +42,8 @@ public struct Settings: Hashable {
     self.isUsingNeuralEngine = isUsingNeuralEngine
     self.isVADEnabled = isVADEnabled
     self.isLiveTranscriptionEnabled = isLiveTranscriptionEnabled
+    self.isLiveTranslationEnabled = isLiveTranslationEnabled
+    self.outputLanguage = outputLanguage
   }
 }
 
@@ -54,6 +60,8 @@ extension Settings: Codable {
     case isUsingNeuralEngine
     case isVADEnabled
     case isLiveTranscriptionEnabled
+    case isLiveTranslationEnabled
+    case outputLanguage
   }
 
   public init(from decoder: Decoder) throws {
@@ -67,5 +75,7 @@ extension Settings: Codable {
     isUsingNeuralEngine = (try? container.decode(Bool.self, forKey: .isUsingNeuralEngine)) ?? true
     isVADEnabled = (try? container.decode(Bool.self, forKey: .isVADEnabled)) ?? false
     isLiveTranscriptionEnabled = (try? container.decode(Bool.self, forKey: .isLiveTranscriptionEnabled)) ?? false
+    isLiveTranslationEnabled = (try? container.decode(Bool.self, forKey: .isLiveTranslationEnabled)) ?? false
+    outputLanguage = try? container.decodeIfPresent(String.self, forKey: .outputLanguage)
   }
 }

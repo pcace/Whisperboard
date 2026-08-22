@@ -12,6 +12,7 @@ public struct Transcription: Codable, Hashable, Identifiable {
   public var model: String
   public var status: Status = .notStarted
   public var text: String
+  public var translatedText: String?
   public var timings: Timings
 
   public var progress: Double {
@@ -35,6 +36,7 @@ public struct Transcription: Codable, Hashable, Identifiable {
     model: String,
     status: Status = .notStarted,
     text: String = "",
+    translatedText: String? = nil,
     timings: Timings = .init()
   ) {
     self.id = id
@@ -45,6 +47,7 @@ public struct Transcription: Codable, Hashable, Identifiable {
     self.model = model
     self.status = status
     self.text = text
+    self.translatedText = translatedText
     self.timings = timings
   }
 }

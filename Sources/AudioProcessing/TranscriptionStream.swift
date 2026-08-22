@@ -22,6 +22,12 @@ public actor TranscriptionStream {
     public var unconfirmedSegments: [TranscriptionSegment] = []
     public var unconfirmedText: [String] = []
 
+    public var isLiveTranslationEnabled = false
+    public var outputLanguage: String? = nil
+    public var translatedText: String = ""
+    public var translatedSegments: [String] = []
+    public var lastTranslatedSegmentCount = 0
+
     public var tokensPerSecond: Double = 0
 
     public var isWorking = false
@@ -67,12 +73,28 @@ public actor TranscriptionStream {
 
   public var stateChangeCallback: (@Sendable (State) -> Void)?
 
+  /// Optional closure used to translate confirmed segment text into the
+  /// configured output language (injected from the app layer).
+  public var translateText: (@Sendable (String) async throws -> String)?
+
   private var whisperKit: WhisperKit?
   private let audioProcessor: AudioProcessor
   private var options: DecodingOptions = .init()
 
   public init(audioProcessor: AudioProcessor) {
     self.audioProcessor = audioProcessor
+  }
+
+  /// Configures live translation: enables/disables it and sets the closure
+  /// used to translate confirmed segments into the output language.
+  public func configureTranslation(
+    enabled: Bool,
+    outputLanguage: String?,
+    translateText: @escaping @Sendable (String) async throws -> String
+  ) {
+    state.isLiveTranslationEnabled = enabled
+    state.outputLanguage = outputLanguage
+    self.translateText = translateText
   }
 
   func fetchModels() async throws {
@@ -348,6 +370,27 @@ public actor TranscriptionStream {
       state.unconfirmedSegments = segments
     }
     logs.debug("Updated unconfirmed segments: \(state.unconfirmedSegments.count)")
+
+    // Translate newly confirmed segments (if enabled).
+    if state.isLiveTranslationEnabled, let translateText {
+      let confirmedCount = state.confirmedSegments.count
+      if confirmedCount > state.lastTranslatedSegmentCount {
+        let newSegments = Array(state.confirmedSegments[state.lastTranslatedSegmentCount..<confirmedCount])
+        state.lastTranslatedSegmentCount = confirmedCount
+        for segment in newSegments {
+          let text = segment.text.trimmingCharacters(in: .whitespacesAndNewlines)
+          guard !text.isEmpty else { continue }
+          do {
+            let translated = try await translateText(text)
+            state.translatedSegments.append(translated)
+            state.translatedText = state.translatedSegments.joined(separator: " ")
+            logs.debug("Translated segment: \(translated)")
+          } catch {
+            logs.error("Translation failed: \(error.localizedDescription)")
+          }
+        }
+      }
+    }
   }
 
   public func transcribeAudioFile(_ fileURL: URL, callback: @escaping (TranscriptionProgress, Double) -> Bool?) async throws -> TranscriptionResult {

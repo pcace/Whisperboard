@@ -62,6 +62,8 @@ struct LiveTranscriptionModelSelector {
 struct LiveTranscriptionModelSelectorView: View {
   @Perception.Bindable var store: StoreOf<LiveTranscriptionModelSelector>
 
+  @Dependency(LiveTranslationClient.self) var liveTranslationClient: LiveTranslationClient
+
   @ObserveInjection private var injection
 
   var body: some View {
@@ -110,6 +112,32 @@ struct LiveTranscriptionModelSelectorView: View {
               }
               .disabled(store.settings.isLiveTranscriptionEnabled == false)
 
+              if #available(iOS 18.0, *) {
+                Toggle(isOn: $store.settings.isLiveTranslationEnabled) {
+                  Label("Live Translation", systemImage: "translate")
+                    .textStyle(.body)
+                }
+                .disabled(store.settings.isLiveTranscriptionEnabled == false)
+
+                if store.settings.isLiveTranslationEnabled {
+                  LabeledContent {
+                    Picker("", selection: $store.settings.outputLanguage) {
+                      ForEach(TranslationLanguage.appleSupported) { language in
+                        Text(language.displayName).tag(language.code as String?)
+                      }
+                    }
+                    .foregroundColor(.DS.Text.subdued)
+                  } label: {
+                    Label("Output language", systemImage: "globe")
+                      .textStyle(.body)
+                  }
+
+                  Text("Translations run on-device via Apple. The first use downloads the language pack.")
+                    .textStyle(.footnote)
+                    .foregroundColor(.DS.Text.subdued)
+                }
+              }
+
 //            Divider()
 //
 //            if let currentModelInfo = store.state.currentModelInfo {
@@ -145,6 +173,22 @@ struct LiveTranscriptionModelSelectorView: View {
             .labelStyle(.titleOnly)
             .padding(.grid(4))
             .cardStyle()
+        }
+      }
+      .onChange(of: store.settings.isLiveTranslationEnabled) { isEnabled in
+        guard isEnabled else {
+          liveTranslationClient.reset()
+          return
+        }
+        let target = store.settings.outputLanguage ?? "en"
+        Task {
+          try? await liveTranslationClient.configure(.init(targetLanguage: target))
+        }
+      }
+      .onChange(of: store.settings.outputLanguage) { outputLanguage in
+        guard store.settings.isLiveTranslationEnabled, let outputLanguage else { return }
+        Task {
+          try? await liveTranslationClient.configure(.init(targetLanguage: outputLanguage))
         }
       }
       .popover(

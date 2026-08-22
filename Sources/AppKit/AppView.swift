@@ -40,6 +40,13 @@ public struct AppView: View {
 
   public var body: some View {
     RootView(store: Self.store)
+      .background {
+        if #available(iOS 18.0, *) {
+          TranslationHostView()
+        } else {
+          EmptyView()
+        }
+      }
   }
 }
 

@@ -23,6 +23,7 @@ public struct RecordingTranscriptionStream: Sendable {
   public var deleteModel: @Sendable (String) async throws -> Void = { _ in }
   public var recommendedModels: @Sendable () -> (default: String, disabled: [String]) = { (default: "", disabled: []) }
   public var deleteAllModels: @Sendable () async throws -> Void = {}
+  public var configureTranslation: @Sendable (Bool, String?, @escaping @Sendable (String) async throws -> String) async -> Void = { _, _, _ in }
 }
 
 // MARK: DependencyKey
@@ -64,6 +65,9 @@ extension RecordingTranscriptionStream: DependencyKey {
       },
       deleteAllModels: {
         try await container.deleteAllModels()
+      },
+      configureTranslation: { enabled, outputLanguage, closure in
+        await container.configureTranslation(enabled: enabled, outputLanguage: outputLanguage, closure: closure)
       }
     )
   }()
@@ -75,6 +79,15 @@ private actor RecordingTranscriptionStreamContainer {
   let audioProcessor: AudioProcessor = .init()
   lazy var recordingStream = RecordingStream(audioProcessor: audioProcessor)
   lazy var transcriptionStream = TranscriptionStream(audioProcessor: audioProcessor)
+  var translationEnabled = false
+  var translationOutputLanguage: String?
+  var translateText: (@Sendable (String) async throws -> String)?
+
+  func configureTranslation(enabled: Bool, outputLanguage: String?, closure: @escaping @Sendable (String) async throws -> String) {
+    translationEnabled = enabled
+    translationOutputLanguage = outputLanguage
+    translateText = closure
+  }
 
   func startRecording(_ fileURL: URL) -> AsyncThrowingStream<RecordingStream.State, Error> {
     AsyncThrowingStream { [weak self] continuation in
@@ -107,6 +120,11 @@ private actor RecordingTranscriptionStreamContainer {
 
         do {
           await transcriptionStream.resetState()
+          await transcriptionStream.configureTranslation(
+            enabled: translationEnabled,
+            outputLanguage: translationOutputLanguage,
+            translateText: translateText ?? { $0 }
+          )
           continuation.onTermination = { [weak self] _ in
             Task { [weak self] in
               await self?.transcriptionStream.stopRealtimeLoop()
