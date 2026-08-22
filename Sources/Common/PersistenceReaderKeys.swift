@@ -1,9 +1,21 @@
 import Foundation
 import ComposableArchitecture
 
-public extension PersistenceReaderKey where Self == PersistenceKeyDefault<FileStorageKey<IdentifiedArrayOf<RecordingInfo>>> {
+public extension PersistenceReaderKey where Self == PersistenceKeyDefault<FilePersistenceKey<IdentifiedArrayOf<RecordingInfo>>> {
   static var recordings: Self {
-    PersistenceKeyDefault(.fileStorage(.documentsDirectory.appending(component: "recordings.json")), [])
+    PersistenceKeyDefault(
+      FilePersistenceKey(url: .documentsDirectory.appending(component: "recordings.json")),
+      []
+    )
+  }
+}
+
+public extension PersistenceReaderKey where Self == PersistenceKeyDefault<FilePersistenceKey<Settings>> {
+  static var settings: Self {
+    PersistenceKeyDefault(
+      FilePersistenceKey(url: .documentsDirectory.appending(component: "settings.json")),
+      Settings()
+    )
   }
 }
 
@@ -16,11 +28,5 @@ public extension PersistenceReaderKey where Self == PersistenceKeyDefault<InMemo
 public extension PersistenceReaderKey where Self == PersistenceKeyDefault<InMemoryKey<Bool>> {
   static var isICloudSyncInProgress: Self {
     PersistenceKeyDefault(.inMemory(#function), false)
-  }
-}
-
-public extension PersistenceReaderKey where Self == FileStorageKey<Settings> {
-  static var settings: Self {
-    .fileStorage(.documentsDirectory.appending(component: "settings.json"))
   }
 }

@@ -13,8 +13,6 @@ let additionalCondition = isAppStore ? "APPSTORE" : ""
 
 let isRevealSupported = FileManager.default.fileExists(atPath: "App/Support/Reveal/RevealServer.xcframework") && !isAppStore
 print("RevealServer.xcframework is \(isRevealSupported ? "supported" : "not supported")")
-let isEttraceSupported = FileManager.default.fileExists(atPath: "App/Support/ETTrace.xcframework") && !isAppStore
-print("ETTrace.xcframework is \(isEttraceSupported ? "supported" : "not supported")")
 
 var appInfoPlist: [String: Plist.Value] = [
   "CFBundleShortVersionString": Plist.Value(stringLiteral: version),
@@ -132,8 +130,8 @@ func createAppTarget(suffix: String = "", isDev: Bool = false, scripts: [TargetS
         "CODE_SIGNING_REQUIRED": "YES",
       ],
       debug: [
-        "OTHER_SWIFT_FLAGS": "-D DEBUG $(inherited) -Xfrontend -warn-long-function-bodies=500 -Xfrontend -warn-long-expression-type-checking=500 -Xfrontend -debug-time-function-bodies -Xfrontend -debug-time-expression-type-checking -Xfrontend -enable-actor-data-race-checks",
-        "OTHER_LDFLAGS": "-Xlinker -interposable $(inherited)",
+        "OTHER_SWIFT_FLAGS": "-D DEBUG $(inherited)",
+        "OTHER_LDFLAGS": "$(inherited)",
         "SWIFT_ACTIVE_COMPILATION_CONDITIONS": "\(additionalCondition) \(isDev ? "DEV" : "") DEBUG",
       ],
       release: [
@@ -169,8 +167,8 @@ let project = Project(
       "MTL_FAST_MATH": "YES",
     ],
     debug: [
-      "OTHER_SWIFT_FLAGS": "-D DEBUG $(inherited) -Xfrontend -warn-long-function-bodies=500 -Xfrontend -warn-long-expression-type-checking=500 -Xfrontend -debug-time-function-bodies -Xfrontend -debug-time-expression-type-checking -Xfrontend -enable-actor-data-race-checks",
-      "OTHER_LDFLAGS": "-Xlinker -interposable $(inherited)",
+      "OTHER_SWIFT_FLAGS": "-D DEBUG $(inherited)",
+      "OTHER_LDFLAGS": "$(inherited)",
       "SWIFT_ACTIVE_COMPILATION_CONDITIONS": "\(additionalCondition) DEBUG",
     ],
     release: [
@@ -221,7 +219,6 @@ let project = Project(
           dependencies: []
             // Check if RevealServer framework exists at this path and only then include it in this array of dependencies
             + (isRevealSupported ? [.xcframework(path: "//App/Support/Reveal/RevealServer.xcframework", status: .optional)] : [])
-            + (isEttraceSupported ? [.xcframework(path: "//App/Support/ETTrace.xcframework", status: .optional)] : [])
         ),
       ])
 

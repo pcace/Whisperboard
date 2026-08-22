@@ -22,7 +22,6 @@ struct SettingsScreenView: View {
         // #endif
 
         ModelSectionView(store: store)
-        PremiumFeaturesSectionView(store: store.scope(state: \.premiumFeaturesSection, action: \.premiumFeaturesSection))
         SpeechSectionView(store: store)
 
         #if DEBUG

@@ -17,7 +17,6 @@ struct SettingsScreen {
 
     var modelSelector: ModelSelector.State = .init()
     var subscriptionSection: SubscriptionSection.State = .init()
-    var premiumFeaturesSection: PremiumFeaturesSection.State = .init()
 
     let availableLanguages: [String] = ["Auto"] + Constants.languages.keys.sorted()
     var appVersion: String = ""
@@ -48,7 +47,6 @@ struct SettingsScreen {
 
     case modelSelector(ModelSelector.Action)
     case subscriptionSection(SubscriptionSection.Action)
-    case premiumFeaturesSection(PremiumFeaturesSection.Action)
 
     case deleteStorageTapped
     case deleteAllModelsTapped
@@ -83,10 +81,6 @@ struct SettingsScreen {
       ModelSelector()
     }
 
-    Scope(state: \.premiumFeaturesSection, action: \.premiumFeaturesSection) {
-      PremiumFeaturesSection()
-    }
-
     Reduce<State, Action> { state, action in
       switch action {
       case .binding:
@@ -96,9 +90,6 @@ struct SettingsScreen {
         return .none
 
       case .subscriptionSection:
-        return .none
-
-      case .premiumFeaturesSection:
         return .none
 
       case .task:
@@ -225,11 +216,5 @@ extension AlertState where Action == SettingsScreen.Action.Alert {
     } message: {
       TextState("Are you sure you want to delete all downloaded models?")
     }
-  }
-}
-
-public extension PersistenceReaderKey where Self == PersistenceKeyDefault<FileStorageKey<Settings>> {
-  static var settings: Self {
-    PersistenceKeyDefault(FileStorageKey<Settings>.settings, .init(selectedModelName: WhisperKit.recommendedModels().default))
   }
 }

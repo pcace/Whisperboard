@@ -55,7 +55,6 @@ struct RootView: View {
           store.send(.recordingListScreen(.task))
           store.send(.settingsScreen(.task))
           store.send(.recordScreen(.micSelector(.task)))
-          store.send(.settingsScreen(.premiumFeaturesSection(.onTask)))
           store.send(.settingsScreen(.updateInfo))
         }
       }
